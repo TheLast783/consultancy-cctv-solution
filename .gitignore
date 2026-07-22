@@ -1,0 +1,57 @@
+# Virtual Environments
+gpu_env/
+venv/
+env/
+.venv/
+
+# Environment Secret Files
+.env
+
+# Installers & Binary Executables
+*.exe
+OllamaSetup.exe
+
+# Database
+sleep_monitor.db
+*.db
+*.sqlite
+*.sqlite3
+
+# Local Stream Configuration & Logs
+cameras.streams
+streams.txt
+*.streams
+*.log
+
+# Heavy AI Model Weights & TensorRT Engines
+*.pt
+*.engine
+*.onnx
+*.bin
+
+# Output Image Directories
+sleeping images/
+pending_review/
+ai_detected_sleeping/
+false_positives/
+test_detections/
+debug_frames/
+*.jpg
+*.jpeg
+*.png
+
+# Python Cache & IDE Directories
+__pycache__/
+*.pyc
+*.pyo
+.idea/
+.vscode/
+
+# Build & Dist Outputs
+build/
+dist/
+*.spec
+
+# Local Scratch / Temp Folders
+project md/
+scratch/

@@ -1,0 +1,17 @@
+# Core AI & Computer Vision Dependencies
+ultralytics>=8.0.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+
+# Vision-Language Model (VLM) & HTTP Requests
+requests>=2.31.0
+
+# Environment & Configuration
+python-dotenv>=1.0.0
+
+# Desktop GUI Interface
+customtkinter>=5.2.0
+
+# Optional PyTorch & CUDA Support (installed automatically by ultralytics if missing)
+# torch>=2.0.0
+# torchvision>=0.15.0
