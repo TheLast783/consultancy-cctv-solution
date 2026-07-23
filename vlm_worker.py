@@ -24,6 +24,8 @@ def process_pending():
     for row in rows:
         event_id, img_path = row
         if not os.path.exists(img_path):
+            c.execute("UPDATE events SET vlm_verdict = 'SKIPPED_MISSING' WHERE id = ?", (event_id,))
+            conn.commit()
             continue
             
         with open(img_path, "rb") as image_file:
@@ -32,16 +34,14 @@ def process_pending():
         payload = {
             "model": MODEL_NAME,
             "prompt": (
-                "This is a 2-panel CCTV crop showing a subject over time (Left panel: 30-50s ago, Right panel: current moment).\n"
-                "Analyze the image carefully:\n\n"
-                "STRICT RULE 0: If there is NO REAL HUMAN present in this image (e.g. it is an empty chair, jacket, wall, furniture, shadow, equipment, or background object), INSTANTLY reply 'Verdict: NO'.\n"
-                "STRICT RULE 1: If the person is STANDING UPRIGHT (at a counter, stove, desk, machine, or room), they are WORKING/ACTIVE and NOT sleeping. Reply 'Verdict: NO'.\n"
-                "STRICT RULE 2: If a real person is SLEEPING WHILE SITTING IN A CHAIR (head resting on desk/table/arms/hands, head slumped forward or tilted back, eyes closed, or sleeping in a chair), or lying down/collapsed, this COUNTS AS SLEEPING! Reply 'Verdict: YES'.\n"
-                "STRICT RULE 3: If the person sitting in the chair is actively typing, writing, reading, or working upright, reply 'Verdict: NO'.\n\n"
-                "Evaluate step-by-step:\n"
-                "1. Is a real human clearly visible in the image?\n"
-                "2. Is the person standing working, sitting actively working, or sleeping while sitting in a chair / at a desk?\n\n"
-                "End your response on the final line with exactly: 'Verdict: YES' or 'Verdict: NO'."
+                "You are an expert CCTV security AI analyzing a 2-panel crop of a worker over time (Left panel: 30-50s ago, Right panel: current moment).\n\n"
+                "Evaluate the subject step-by-step:\n"
+                "1. HUMAN PRESENCE: Is a real human visible? (If it is an empty chair, jacket, wall, shadow, or furniture -> reply 'Verdict: NO').\n"
+                "2. STANDING WORK: Is the person standing upright at a counter, stove, machine, or desk? (If standing -> reply 'Verdict: NO').\n"
+                "3. SLEEPING IN CHAIR/DESK: Is the person asleep? (Resting head on desk/table/arms/hands, head slumped forward/back/sideways in a chair, eyes closed, or dormant motionless posture -> reply 'Verdict: YES').\n"
+                "4. ACTIVE WORK: Is the person sitting upright actively typing, writing, using a phone, or working? -> reply 'Verdict: NO'.\n\n"
+                "First, state your 1-sentence visual observation of the subject's posture and activity.\n"
+                "On the very last line, write exactly: 'Verdict: YES' or 'Verdict: NO'."
             ),
             "images": [encoded_string],
             "stream": False,
