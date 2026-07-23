@@ -169,7 +169,20 @@ while True:
                     current_ids_this_frame.add(tid)
                     
                     if tid not in track_state:
-                        track_state[tid] = {'alerted': False, 'last_center': None, 'still_start_time': now}
+                        # Technique D: Re-use recent spatial state (within 5s & 80px) if YOLO dropped tracking for 1-2 frames
+                        matched_old_state = None
+                        raw_cx, raw_cy = (raw_x1 + raw_x2) / 2.0, (raw_y1 + raw_y2) / 2.0
+                        for old_tid, old_st in track_state.items():
+                            if old_tid not in current_ids_this_frame and (now - old_st.get('last_seen', 0) < 5.0):
+                                if 'last_center' in old_st and old_st['last_center'] is not None:
+                                    if math.dist((raw_cx, raw_cy), old_st['last_center']) < 80.0:
+                                        matched_old_state = old_st
+                                        break
+                        if matched_old_state is not None:
+                            track_state[tid] = matched_old_state
+                        else:
+                            track_state[tid] = {'alerted': False, 'last_center': None, 'still_start_time': now}
+                            
                     state = track_state[tid]
                     state['last_seen'] = now
                     
@@ -200,7 +213,7 @@ while True:
                     if ('initial_crop' not in state or state['initial_crop'] is None) and clean_crop is not None:
                         state['initial_crop'] = clean_crop
                     
-                    # 1 FPS Sleep Detection & Geometric Edge Math
+                    # 1 FPS Sleep Detection & Center-of-Mass Motion Math (Technique C)
                     if 'last_box' not in state or state['last_box'] is None:
                         state['last_center'] = (cx, cy)
                         state['last_box'] = (x1, y1, x2, y2)
@@ -212,19 +225,18 @@ while True:
                             
                             move_dist = math.dist((cx, cy), (prev_cx, prev_cy))
                             
-                            # Calculate shift along width and height independently.
-                            # Fixing bug: max(s_w, s_h) previously inflated threshold to ~20px for tall standing people!
                             dx1 = abs(x1 - px1)
                             dy1 = abs(y1 - py1)
                             dx2 = abs(x2 - px2)
                             dy2 = abs(y2 - py2)
                             
-                            # 4% aspect-proportional thresholds (typically ~3-5px for width and ~6-10px for height)
-                            thresh_w = max(3.0, s_w * 0.04)
-                            thresh_h = max(4.0, s_h * 0.04)
+                            # Technique C: Robust Center-of-Mass & Dual-Edge Movement Thresholds
+                            thresh_w = max(6.0, s_w * 0.06)
+                            thresh_h = max(8.0, s_h * 0.06)
+                            center_thresh = max(10.0, max(s_w, s_h) * 0.07)
                             
-                            # If torso center moved, OR if any corner/hand/head shifted beyond the tight threshold
-                            if move_dist > thresh_w or dx1 > thresh_w or dx2 > thresh_w or dy1 > thresh_h or dy2 > thresh_h:
+                            # Reset stillness timer ONLY on actual body center displacement or dual-edge movement
+                            if move_dist > center_thresh or (dx1 > thresh_w and dx2 > thresh_w) or (dy1 > thresh_h and dy2 > thresh_h):
                                 state['still_start_time'] = now
                                 state['alerted'] = False
                                 if clean_crop is not None:
