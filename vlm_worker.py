@@ -34,12 +34,13 @@ def process_pending():
             "prompt": (
                 "This is a 2-panel CCTV crop showing a subject over time (Left panel: 30-50s ago, Right panel: current moment).\n"
                 "Analyze the image carefully:\n\n"
-                "STRICT RULE 0: If there is NO REAL HUMAN present in this image (e.g. it is a chair, jacket, wall, furniture, shadow, equipment, or background object), INSTANTLY reply 'Verdict: NO'.\n"
+                "STRICT RULE 0: If there is NO REAL HUMAN present in this image (e.g. it is an empty chair, jacket, wall, furniture, shadow, equipment, or background object), INSTANTLY reply 'Verdict: NO'.\n"
                 "STRICT RULE 1: If the person is STANDING UPRIGHT (at a counter, stove, desk, machine, or room), they are WORKING/ACTIVE and NOT sleeping. Reply 'Verdict: NO'.\n"
-                "STRICT RULE 2: ONLY reply 'Verdict: YES' if a real person is physically SLUMPED OVER, head resting flat on a desk/table/arms, lying down, or collapsed sleeping.\n\n"
+                "STRICT RULE 2: If a real person is SLEEPING WHILE SITTING IN A CHAIR (head resting on desk/table/arms/hands, head slumped forward or tilted back, eyes closed, or sleeping in a chair), or lying down/collapsed, this COUNTS AS SLEEPING! Reply 'Verdict: YES'.\n"
+                "STRICT RULE 3: If the person sitting in the chair is actively typing, writing, reading, or working upright, reply 'Verdict: NO'.\n\n"
                 "Evaluate step-by-step:\n"
                 "1. Is a real human clearly visible in the image?\n"
-                "2. Is the person standing upright, sitting working, or slumped over sleeping?\n\n"
+                "2. Is the person standing working, sitting actively working, or sleeping while sitting in a chair / at a desk?\n\n"
                 "End your response on the final line with exactly: 'Verdict: YES' or 'Verdict: NO'."
             ),
             "images": [encoded_string],
