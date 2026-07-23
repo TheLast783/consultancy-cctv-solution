@@ -219,12 +219,12 @@ while True:
                             dx2 = abs(x2 - px2)
                             dy2 = abs(y2 - py2)
                             
-                            # 6% aspect-proportional thresholds (min 6.0px width, min 8.0px height) to absorb far-away camera noise
-                            thresh_w = max(6.0, s_w * 0.06)
-                            thresh_h = max(8.0, s_h * 0.06)
+                            # 4% aspect-proportional thresholds (typically ~3-5px for width and ~6-10px for height)
+                            thresh_w = max(3.0, s_w * 0.04)
+                            thresh_h = max(4.0, s_h * 0.04)
                             
-                            # Reset stillness timer only on true body movement (center shift or dual-edge shift)
-                            if move_dist > thresh_w or (dx1 > thresh_w and dx2 > thresh_w) or (dy1 > thresh_h and dy2 > thresh_h):
+                            # If torso center moved, OR if any corner/hand/head shifted beyond the tight threshold
+                            if move_dist > thresh_w or dx1 > thresh_w or dx2 > thresh_w or dy1 > thresh_h or dy2 > thresh_h:
                                 state['still_start_time'] = now
                                 state['alerted'] = False
                                 if clean_crop is not None:
