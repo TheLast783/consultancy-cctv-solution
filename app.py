@@ -27,7 +27,17 @@ class SleepMonitorApp(ctk.CTk):
     def start_system(self):
         if not self.is_running:
             python_exe = "python"
-            for cand in [r"gpu_env\Scripts\python.exe", r"..\gpu_env\Scripts\python.exe", os.path.join(os.path.dirname(os.path.abspath(__file__)), "gpu_env", "Scripts", "python.exe"), os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "gpu_env", "Scripts", "python.exe")]:
+            cur_dir = os.path.dirname(os.path.abspath(sys.executable if getattr(sys, 'frozen', False) else __file__))
+            candidates = [
+                r"gpu_env\Scripts\python.exe",
+                r"..\gpu_env\Scripts\python.exe",
+                r"..\..\gpu_env\Scripts\python.exe",
+                r"..\..\..\gpu_env\Scripts\python.exe",
+                os.path.join(cur_dir, "gpu_env", "Scripts", "python.exe"),
+                os.path.join(cur_dir, "..", "gpu_env", "Scripts", "python.exe"),
+                os.path.join(cur_dir, "..", "..", "gpu_env", "Scripts", "python.exe")
+            ]
+            for cand in candidates:
                 if os.path.exists(cand):
                     python_exe = os.path.abspath(cand)
                     break
