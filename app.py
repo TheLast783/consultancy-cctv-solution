@@ -26,8 +26,11 @@ class SleepMonitorApp(ctk.CTk):
 
     def start_system(self):
         if not self.is_running:
-            # 1. Initialize the Database
-            python_exe = r"gpu_env\Scripts\python.exe" if os.path.exists(r"gpu_env\Scripts\python.exe") else "python"
+            python_exe = "python"
+            for cand in [r"gpu_env\Scripts\python.exe", r"..\gpu_env\Scripts\python.exe", os.path.join(os.path.dirname(os.path.abspath(__file__)), "gpu_env", "Scripts", "python.exe"), os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "gpu_env", "Scripts", "python.exe")]:
+                if os.path.exists(cand):
+                    python_exe = os.path.abspath(cand)
+                    break
             subprocess.run([python_exe, "db.py"])
             
             # 2. Launch the 3 background workers concurrently
