@@ -1,6 +1,7 @@
 import customtkinter as ctk
 import subprocess
 import os
+import sys
 import signal
 
 ctk.set_appearance_mode("Dark")
