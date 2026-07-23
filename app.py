@@ -27,29 +27,30 @@ class SleepMonitorApp(ctk.CTk):
 
     def start_system(self):
         if not self.is_running:
+            # Determine base directory (exe folder when frozen, script folder otherwise)
+            base = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
+            
             if getattr(sys, 'frozen', False):
                 exe = sys.executable
-                subprocess.run([exe, "db"])
-                self.processes.append(subprocess.Popen([exe, "multi_main"]))
-                self.processes.append(subprocess.Popen([exe, "vlm_worker"]))
-                self.processes.append(subprocess.Popen([exe, "mailer"]))
+                subprocess.run([exe, "db"], cwd=base)
+                self.processes.append(subprocess.Popen([exe, "multi_main"], cwd=base))
+                self.processes.append(subprocess.Popen([exe, "vlm_worker"], cwd=base))
+                self.processes.append(subprocess.Popen([exe, "mailer"], cwd=base))
             else:
                 python_exe = "python"
-                cur_dir = os.path.dirname(os.path.abspath(__file__))
                 candidates = [
-                    r"gpu_env\Scripts\python.exe",
-                    r"..\gpu_env\Scripts\python.exe",
-                    r"..\..\gpu_env\Scripts\python.exe",
-                    os.path.join(cur_dir, "..", "..", "gpu_env", "Scripts", "python.exe")
+                    os.path.join(base, "gpu_env", "Scripts", "python.exe"),
+                    os.path.join(base, "..", "gpu_env", "Scripts", "python.exe"),
+                    os.path.join(base, "..", "..", "gpu_env", "Scripts", "python.exe"),
                 ]
                 for cand in candidates:
                     if os.path.exists(cand):
                         python_exe = os.path.abspath(cand)
                         break
-                subprocess.run([python_exe, "db.py"])
-                self.processes.append(subprocess.Popen([python_exe, "multi_main.py"]))
-                self.processes.append(subprocess.Popen([python_exe, "vlm_worker.py"]))
-                self.processes.append(subprocess.Popen([python_exe, "mailer.py"]))
+                subprocess.run([python_exe, os.path.join(base, "db.py")], cwd=base)
+                self.processes.append(subprocess.Popen([python_exe, os.path.join(base, "multi_main.py")], cwd=base))
+                self.processes.append(subprocess.Popen([python_exe, os.path.join(base, "vlm_worker.py")], cwd=base))
+                self.processes.append(subprocess.Popen([python_exe, os.path.join(base, "mailer.py")], cwd=base))
             
             self.is_running = True
             self.label.configure(text="System ACTIVE\n(Tracking RTSP Feeds & VLM)", text_color="green")
@@ -72,12 +73,14 @@ class SleepMonitorApp(ctk.CTk):
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         cmd = sys.argv[1]
+        base = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
         if cmd == "db":
             import db
             db.init_db()
         elif cmd in ["multi_main", "vlm_worker", "mailer"]:
             import runpy
-            runpy.run_path(f"{cmd}.py")
+            script = os.path.join(base, f"{cmd}.py")
+            runpy.run_path(script, run_name="__main__")
     else:
         app = SleepMonitorApp()
         app.mainloop()
