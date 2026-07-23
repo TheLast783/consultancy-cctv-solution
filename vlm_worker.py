@@ -32,13 +32,14 @@ def process_pending():
         payload = {
             "model": MODEL_NAME,
             "prompt": (
-                "This is a 2-panel CCTV crop showing a person over time (Left panel: 30-50s ago, Right panel: current moment).\n"
-                "Analyze the person's posture carefully:\n\n"
+                "This is a 2-panel CCTV crop showing a subject over time (Left panel: 30-50s ago, Right panel: current moment).\n"
+                "Analyze the image carefully:\n\n"
+                "STRICT RULE 0: If there is NO REAL HUMAN present in this image (e.g. it is a chair, jacket, wall, furniture, shadow, equipment, or background object), INSTANTLY reply 'Verdict: NO'.\n"
                 "STRICT RULE 1: If the person is STANDING UPRIGHT (at a counter, stove, desk, machine, or room), they are WORKING/ACTIVE and NOT sleeping. Reply 'Verdict: NO'.\n"
-                "STRICT RULE 2: ONLY reply 'Verdict: YES' if the person is physically SLUMPED OVER, head resting flat on a desk/table/arms, lying down, or collapsed.\n\n"
+                "STRICT RULE 2: ONLY reply 'Verdict: YES' if a real person is physically SLUMPED OVER, head resting flat on a desk/table/arms, lying down, or collapsed sleeping.\n\n"
                 "Evaluate step-by-step:\n"
-                "1. Is the person standing upright or sitting/slumped over?\n"
-                "2. Is their head resting flat on a surface/arms or held up while working?\n\n"
+                "1. Is a real human clearly visible in the image?\n"
+                "2. Is the person standing upright, sitting working, or slumped over sleeping?\n\n"
                 "End your response on the final line with exactly: 'Verdict: YES' or 'Verdict: NO'."
             ),
             "images": [encoded_string],

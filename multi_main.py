@@ -79,6 +79,7 @@ class LiveCamera:
 
 cameras = [LiveCamera(url) for url in urls]
 global_state = {url: {} for url in urls}
+spatial_cooldowns = {url: [] for url in urls}
 
 print(f"\nStarting GPU Pre-Flight: Allocating {len(urls)} engines into VRAM (Takes ~1 minute)...\n")
 
@@ -141,7 +142,7 @@ while True:
             persist=True,
             tracker="botsort.yaml",
             classes=[0],
-            conf=0.30,           # Restored original confidence
+            conf=0.45,           # Raised to 0.45 to eliminate weak non-human ghost box detections
             iou=0.40,
             verbose=False
         )
@@ -150,6 +151,9 @@ while True:
         camera_id = str(cam.src)
         track_state = global_state[camera_id]
         current_ids_this_frame = set()
+        
+        # Clean up spatial cooldowns older than 300s (5 minutes) for this camera
+        spatial_cooldowns[camera_id] = [p for p in spatial_cooldowns.get(camera_id, []) if now - p['time'] < 300.0]
         
         if result.boxes is not None and result.boxes.id is not None:
             boxes = result.boxes.xyxy.cpu().numpy().astype(int)
@@ -233,11 +237,26 @@ while True:
                     seconds_still = now - state['still_start_time']
                     current_sec = int(seconds_still)
                     
-                    if current_sec > 0 and current_sec != state.get('last_printed_sec', -1):
+                    if current_sec > 0 and current_sec != state.get('last_printed_sec', -1) and not state.get('alerted', False):
                         print(f"Cam:{camera_id[-10:]} | Tracking ID:{tid} | Still for: {current_sec}s / 50s")
                         state['last_printed_sec'] = current_sec
                     
-                    if seconds_still >= 50.0:
+                    if seconds_still >= 50.0 and not state.get('alerted', False):
+                        state['alerted'] = True
+                        
+                        # Spatial Position Cooldown: Check if this (X, Y) spot on this camera was triggered in the last 5 minutes
+                        in_spatial_cooldown = False
+                        for past in spatial_cooldowns.get(camera_id, []):
+                            if math.dist((cx, cy), (past['cx'], past['cy'])) < 120.0:
+                                in_spatial_cooldown = True
+                                break
+                                
+                        if in_spatial_cooldown:
+                            continue
+                            
+                        # Record new trigger position with timestamp
+                        spatial_cooldowns.setdefault(camera_id, []).append({'cx': cx, 'cy': cy, 'time': now})
+                        
                         safe_cam_name = "".join(c if c.isalnum() else "_" for c in camera_id[-20:])
                         pending_dir = os.path.abspath('pending_review')
                         os.makedirs(pending_dir, exist_ok=True)
@@ -269,12 +288,6 @@ while True:
                             print(f"DB Error: {e}")
                         
                         print(f"\n[{time.strftime('%H:%M:%S')}] SLEEPING — Cam: {safe_cam_name} | ID: {tid} (Sent 2-Panel Temporal Strip to VLM)")
-                        
-                        # Reset the timer to 0 and refresh initial crop for next evaluation
-                        state['still_start_time'] = now
-                        state['alerted'] = False
-                        if clean_crop is not None:
-                            state['initial_crop'] = clean_crop
 
         current_human_count = len(current_ids_this_frame)
         if current_human_count > 0:
