@@ -75,15 +75,9 @@ if __name__ == "__main__":
         if cmd == "db":
             import db
             db.init_db()
-        elif cmd == "multi_main":
-            import multi_main
-            multi_main.main()
-        elif cmd == "vlm_worker":
-            import vlm_worker
-            vlm_worker.main()
-        elif cmd == "mailer":
-            import mailer
-            mailer.main()
+        elif cmd in ["multi_main", "vlm_worker", "mailer"]:
+            import runpy
+            runpy.run_path(f"{cmd}.py")
     else:
         app = SleepMonitorApp()
         app.mainloop()
