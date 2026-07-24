@@ -129,7 +129,7 @@ while True:
     now = time.time()
     
     if int(now) % 5 == 0 and last_heartbeat != int(now):
-        print(f"[{time.strftime('%H:%M:%S')}] Live: Engines running. Looking for humans...", end='\r', flush=True)
+        print(f"[{time.strftime('%H:%M:%S')}] Live: Engines running. Looking for humans...", flush=True)
         last_heartbeat = int(now)
 
     for cam in cameras:
