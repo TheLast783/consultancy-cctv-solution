@@ -35,12 +35,20 @@ def process_pending():
             "model": MODEL_NAME,
             "prompt": (
                 "You are an expert CCTV security AI analyzing a 2-panel crop of a worker over time (Left panel: 30-50s ago, Right panel: current moment).\n\n"
-                "Evaluate the subject step-by-step:\n"
-                "1. HUMAN PRESENCE: Is a real human visible? (If it is an empty chair, jacket, wall, shadow, or furniture -> reply 'Verdict: NO').\n"
-                "2. STANDING WORK: Is the person standing upright at a counter, stove, machine, or desk? (If standing -> reply 'Verdict: NO').\n"
-                "3. SLEEPING IN CHAIR/DESK: Is the person asleep? (Resting head on desk/table/arms/hands, head slumped forward/back/sideways in a chair, eyes closed, or dormant motionless posture -> reply 'Verdict: YES').\n"
-                "4. ACTIVE WORK: Is the person sitting upright actively typing, writing, using a phone, or working? -> reply 'Verdict: NO'.\n\n"
-                "First, state your 1-sentence visual observation of the subject's posture and activity.\n"
+                "Follow this EXACT Sequential Decision Tree:\n"
+                "1. HUMAN PRESENCE: Is a real human visible?\n"
+                "   - If NO (empty chair, jacket, shadow, object) -> STOP immediately and output 'Verdict: NO'.\n"
+                "   - If YES -> Proceed to Step 2.\n"
+                "2. STANDING CHECK: Is the person standing upright?\n"
+                "   - If YES (standing upright) -> STOP immediately and output 'Verdict: NO'.\n"
+                "   - If NO (sitting or lying down) -> Proceed to Step 3.\n"
+                "3. SLEEPING POSTURE: Is the person asleep? (Head resting on desk/arms/hands, head slumped forward/back/sideways, eyes closed, dormant posture)\n"
+                "   - If YES (sleeping) -> STOP immediately and output 'Verdict: YES'.\n"
+                "   - If NO -> Proceed to Step 4.\n"
+                "4. ACTIVE WORK CHECK: Is the sitting person actively working? (Typing, writing, actively operating a phone, or working)\n"
+                "   - If YES (actively working) -> Output 'Verdict: NO'.\n"
+                "   - If NO (sitting inactive/dormant/resting) -> Output 'Verdict: YES'.\n\n"
+                "First, state a 1-sentence visual observation explaining your step-by-step decision.\n"
                 "On the very last line, write exactly: 'Verdict: YES' or 'Verdict: NO'."
             ),
             "images": [encoded_string],
