@@ -3,7 +3,7 @@ import os
 import shutil
 
 print("==========================================")
-print("Building Standalone CCTVSleepMonitor.exe")
+print("Building Windowed Standalone CCTVSleepMonitor.exe")
 print("==========================================\n")
 
 opts = [
@@ -12,6 +12,8 @@ opts = [
     '--onedir',
     '--noconfirm',
     '--clean',
+    '--noconsole',
+    '--windowed',
     '--hidden-import=customtkinter',
     '--hidden-import=ultralytics',
     '--hidden-import=cv2',
@@ -37,12 +39,12 @@ if os.path.exists(dist_dir):
         print("Copying .env configuration to executable directory...")
         shutil.copy('.env', os.path.join(dist_dir, '.env'))
     
-    # Copy python worker scripts so app.py subprocess.Popen calls find them
-    for script in ['multi_main.py', 'vlm_worker.py', 'mailer.py', 'db.py']:
+    # Copy python worker & updater scripts so app.py finds them
+    for script in ['multi_main.py', 'vlm_worker.py', 'mailer.py', 'db.py', 'version.py', 'updater.py']:
         if os.path.exists(script):
             shutil.copy(script, os.path.join(dist_dir, script))
 
 print("\n==========================================")
-print("Build Successful!")
+print("Windowed Standalone Build Successful!")
 print("Executable created at: dist\\CCTVSleepMonitor\\CCTVSleepMonitor.exe")
 print("==========================================\n")
