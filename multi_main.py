@@ -37,10 +37,25 @@ if not urls:
     print("WARNING: No valid rtsp:// lines found in .env. Falling back to webcam 0.")
     urls = [0]
 
-# 2. Load Independent TensorRT Engines (Bypasses all Batching Restrictions)
+# 2. Load Independent TensorRT Engines with Auto-Compilation for Target GPU
 model_path = 'yolov8m.engine' if os.path.exists('yolov8m.engine') else 'yolov8m.pt'
-print(f"Loading {len(urls)} independent {model_path} instances into GPU RAM...")
-models = {url: YOLO(model_path, task='detect') for url in urls}
+try:
+    print(f"Loading {len(urls)} independent {model_path} instances into GPU RAM...")
+    models = {url: YOLO(model_path, task='detect') for url in urls}
+except Exception as e:
+    print(f"Notice: Pre-built TensorRT engine incompatible with local GPU architecture. Building fresh .engine for this GPU...")
+    if os.path.exists('yolov8m.engine'):
+        try:
+            os.remove('yolov8m.engine')
+        except:
+            pass
+    if os.path.exists('yolov8m.pt'):
+        print("Compiling yolov8m.engine tailored specifically for this computer's NVIDIA GPU (Takes ~1-2 mins)...")
+        YOLO('yolov8m.pt').export(format='engine')
+        model_path = 'yolov8m.engine' if os.path.exists('yolov8m.engine') else 'yolov8m.pt'
+    else:
+        model_path = 'yolov8m.pt'
+    models = {url: YOLO(model_path, task='detect') for url in urls}
 
 # 3. Threaded Camera Grabbers
 class LiveCamera:
