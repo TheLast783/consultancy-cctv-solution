@@ -290,11 +290,11 @@ while True:
                     if seconds_still >= 50.0 and not state.get('alerted', False):
                         state['alerted'] = True
                         
-                        # Spatial Position Cooldown (Box Coordinates cx, cy): Check if this (X, Y) box spot on this camera was triggered in last 12 hours
+                        # Tight Box Coordinate Matching (40-pixel radius): Blocks duplicate alerts for the exact spot, but detects if person moves by > 40px
                         cam_key = cam.src
                         in_spatial_cooldown = False
                         for past in spatial_cooldowns.get(cam_key, []):
-                            if math.dist((cx, cy), (past['cx'], past['cy'])) < 150.0:
+                            if math.dist((cx, cy), (past['cx'], past['cy'])) < 40.0:
                                 in_spatial_cooldown = True
                                 break
                                 
