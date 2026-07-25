@@ -53,14 +53,14 @@ def apply_update(download_url):
                 bat_script = os.path.join(exe_dir, "update_helper.bat")
                 with open(bat_script, "w") as f:
                     if is_zip:
-                        # Unpack zip archive over existing folder (handles flat zip or nested folder zip)
+                        # Unpack zip archive over existing folder (updates python scripts while keeping exe binary intact)
                         f.write(
                             "@echo off\n"
                             "cd /d \"%~dp0\"\n"
                             "timeout /t 2 /nobreak > NUL\n"
                             "tar -xf update.zip\n"
                             "if exist CCTVSleepMonitor\\ (\n"
-                            "    xcopy /s /y /e CCTVSleepMonitor\\* .\n"
+                            "    xcopy /s /y /e CCTVSleepMonitor\\*.py .\n"
                             "    rmdir /s /q CCTVSleepMonitor\n"
                             ")\n"
                             "del update.zip\n"
