@@ -7,6 +7,17 @@ import re
 import numpy as np
 import threading
 from dotenv import load_dotenv
+import sys
+from types import ModuleType
+try:
+    import matplotlib
+except ImportError:
+    m = ModuleType('matplotlib')
+    plt = ModuleType('matplotlib.pyplot')
+    m.pyplot = plt
+    sys.modules['matplotlib'] = m
+    sys.modules['matplotlib.pyplot'] = plt
+
 from ultralytics import YOLO
 import sqlite3
 
