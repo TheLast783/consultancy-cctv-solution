@@ -58,8 +58,8 @@ def process_pending():
         
         try:
             print(f"VLM ({MODEL_NAME}) analyzing {img_path}...", flush=True)
-            # Set a 40-second timeout to prevent Ollama from hanging the worker process indefinitely
-            response = requests.post(OLLAMA_URL, json=payload, timeout=40)
+            # Set a 90-second timeout to accommodate slower laptop GPU/CPU inference without false timeouts
+            response = requests.post(OLLAMA_URL, json=payload, timeout=90)
             response.raise_for_status()
             raw_answer = response.json().get("response", "").strip()
             answer = raw_answer.upper()
