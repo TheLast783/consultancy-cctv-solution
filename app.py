@@ -62,17 +62,19 @@ class SleepMonitorApp(ctk.CTk):
     def run_update_check(self):
         self.update_btn.configure(text="Checking for updates...", state="disabled")
         self.update()
-        has_update, latest_ver, download_url = check_for_updates()
-        if has_update:
-            msg = f"A new version (v{latest_ver}) is available on GitHub!\nWould you like to update now?"
-            if messagebox.askyesno("Update Available", msg):
-                self.update_btn.configure(text="Updating App...")
-                self.update()
-                apply_update(download_url)
-                messagebox.showinfo("Update Complete", "Update downloaded successfully!")
-        else:
-            messagebox.showinfo("No Updates", f"You are running the latest version (v{__version__}).")
-        self.update_btn.configure(text="Check for GitHub Updates", state="normal")
+        
+        def _bg_check():
+            has_update, latest_ver, download_url = check_for_updates()
+            if has_update:
+                msg = f"A new version (v{latest_ver}) is available on GitHub!\nWould you like to update now?"
+                if messagebox.askyesno("Update Available", msg):
+                    self.after(0, lambda: self.update_btn.configure(text="Downloading Update (130MB)..."))
+                    apply_update(download_url)
+            else:
+                self.after(0, lambda: messagebox.showinfo("No Updates", f"You are running the latest version (v{__version__})."))
+            self.after(0, lambda: self.update_btn.configure(text="Check for GitHub Updates", state="normal"))
+
+        threading.Thread(target=_bg_check, daemon=True).start()
 
     def monitor_stream(self, proc, prefix=""):
         try:
