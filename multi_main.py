@@ -13,6 +13,7 @@ try:
     import matplotlib
 except ImportError:
     m = ModuleType('matplotlib')
+    m.__path__ = []
     plt = ModuleType('matplotlib.pyplot')
     m.pyplot = plt
     sys.modules['matplotlib'] = m
