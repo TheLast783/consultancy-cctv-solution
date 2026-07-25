@@ -7,29 +7,22 @@ import re
 import numpy as np
 import threading
 from dotenv import load_dotenv
-import builtins
 import sys
 import types
+
+# Direct mock of ultralytics.models.yolo.semantic.train to completely bypass matplotlib import tree
+sem = types.ModuleType('ultralytics.models.yolo.semantic')
+sem.train = types.ModuleType('ultralytics.models.yolo.semantic.train')
+sys.modules['ultralytics.models.yolo.semantic'] = sem
+sys.modules['ultralytics.models.yolo.semantic.train'] = sem.train
 
 m = types.ModuleType('matplotlib')
 m.__path__ = []
 plt = types.ModuleType('matplotlib.pyplot')
 plt.pyplot = plt
-plt.figure = lambda *a, **k: None
-plt.close = lambda *a, **k: None
-plt.savefig = lambda *a, **k: None
 m.pyplot = plt
-
 sys.modules['matplotlib'] = m
 sys.modules['matplotlib.pyplot'] = plt
-
-_orig_import = builtins.__import__
-def _safe_import(name, *args, **kwargs):
-    if name.startswith('matplotlib'):
-        return sys.modules.get(name, m)
-    return _orig_import(name, *args, **kwargs)
-
-builtins.__import__ = _safe_import
 
 from ultralytics import YOLO
 import sqlite3
