@@ -67,11 +67,18 @@ def process_pending():
             # Print the RAW output for full audit visibility
             print(f"  -> Raw AI Output:\n{raw_answer}\n", flush=True)
             
-            if "VERDICT: YES" in answer or "VERDICT:YES" in answer:
+            raw_lines = [l.strip() for l in raw_answer.strip().split('\n') if l.strip()]
+            last_line = raw_lines[-1].upper() if raw_lines else ""
+            
+            if "VERDICT: YES" in answer or "VERDICT:YES" in answer or "VERDICT : YES" in answer:
                 verdict = "YES"
-            elif "VERDICT: NO" in answer or "VERDICT:NO" in answer:
+            elif "VERDICT: NO" in answer or "VERDICT:NO" in answer or "VERDICT : NO" in answer:
                 verdict = "NO"
-            elif "YES" in answer and "NO" not in answer:
+            elif "YES" in last_line or "ASLEEP" in last_line or "SLEEPING" in last_line:
+                verdict = "YES"
+            elif "NO" in last_line or "WORKING" in last_line or "AWAKE" in last_line:
+                verdict = "NO"
+            elif any(k in answer for k in ["IS ASLEEP", "THEY ARE ASLEEP", "PERSON IS ASLEEP", "INDICATES THAT THEY ARE ASLEEP", "INDICATES THEY ARE ASLEEP", "HEAD SLUMPED FORWARD"]):
                 verdict = "YES"
             else:
                 verdict = "NO"
