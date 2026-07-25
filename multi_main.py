@@ -290,11 +290,11 @@ while True:
                     if seconds_still >= 50.0 and not state.get('alerted', False):
                         state['alerted'] = True
                         
-                        # Tight Box Coordinate Matching (40-pixel radius): Blocks duplicate alerts for the exact spot, but detects if person moves by > 40px
+                        # Spatial Box Coordinate Matching (120-pixel radius): Blocks duplicate alerts for the exact spot
                         cam_key = cam.src
                         in_spatial_cooldown = False
                         for past in spatial_cooldowns.get(cam_key, []):
-                            if math.dist((cx, cy), (past['cx'], past['cy'])) < 40.0:
+                            if math.dist((cx, cy), (past['cx'], past['cy'])) < 120.0:
                                 in_spatial_cooldown = True
                                 break
                                 
