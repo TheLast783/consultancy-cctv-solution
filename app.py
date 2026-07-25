@@ -3,6 +3,7 @@ import subprocess
 import os
 import sys
 import signal
+import threading
 from tkinter import messagebox
 from version import __version__
 from updater import check_for_updates, apply_update
@@ -16,7 +17,7 @@ class SleepMonitorApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("CCTV Sleep Monitor AI")
-        self.geometry("520x420")
+        self.geometry("540x560")
         
         self.processes = []
         self.is_running = False
@@ -32,19 +33,31 @@ class SleepMonitorApp(ctk.CTk):
         self.ver_lbl.pack(side="right")
         
         # Main Status Label
-        self.label = ctk.CTkLabel(self, text="System Offline", font=("Roboto", 24, "bold"), text_color="red")
-        self.label.pack(pady=30)
+        self.label = ctk.CTkLabel(self, text="System Offline", font=("Roboto", 22, "bold"), text_color="red")
+        self.label.pack(pady=15)
         
         # Buttons
-        self.start_btn = ctk.CTkButton(self, text="START MONITORING", font=("Roboto", 18), height=50, command=self.start_system)
-        self.start_btn.pack(pady=10, padx=40, fill="x")
+        self.start_btn = ctk.CTkButton(self, text="START MONITORING", font=("Roboto", 18), height=45, command=self.start_system)
+        self.start_btn.pack(pady=5, padx=40, fill="x")
         
-        self.stop_btn = ctk.CTkButton(self, text="STOP", font=("Roboto", 18), height=50, fg_color="red", hover_color="darkred", state="disabled", command=self.stop_system)
-        self.stop_btn.pack(pady=10, padx=40, fill="x")
+        self.stop_btn = ctk.CTkButton(self, text="STOP", font=("Roboto", 18), height=45, fg_color="red", hover_color="darkred", state="disabled", command=self.stop_system)
+        self.stop_btn.pack(pady=5, padx=40, fill="x")
+        
+        # Live Startup & System Status Log Area
+        self.log_box = ctk.CTkTextbox(self, height=160, font=("Consolas", 11), wrap="word")
+        self.log_box.pack(pady=15, padx=20, fill="both", expand=True)
+        self.log_box.insert("end", "System Status Log Ready. Click START MONITORING to begin...\n")
+        self.log_box.configure(state="disabled")
         
         # Update Button
         self.update_btn = ctk.CTkButton(self, text="Check for GitHub Updates", font=("Roboto", 12), fg_color="gray30", hover_color="gray40", command=self.run_update_check)
-        self.update_btn.pack(pady=15)
+        self.update_btn.pack(pady=10)
+
+    def log(self, text):
+        self.log_box.configure(state="normal")
+        self.log_box.insert("end", text + "\n")
+        self.log_box.see("end")
+        self.log_box.configure(state="disabled")
 
     def run_update_check(self):
         self.update_btn.configure(text="Checking for updates...", state="disabled")
@@ -61,16 +74,38 @@ class SleepMonitorApp(ctk.CTk):
             messagebox.showinfo("No Updates", f"You are running the latest version (v{__version__}).")
         self.update_btn.configure(text="Check for GitHub Updates", state="normal")
 
+    def monitor_stream(self, proc, prefix=""):
+        try:
+            for line in iter(proc.stdout.readline, ''):
+                if not line:
+                    break
+                line_str = line.strip()
+                # Filter out noisy per-person tracking logs
+                if any(k in line_str for k in ["Tracking ID", "Still for:", "Contours", "Active Detection"]):
+                    continue
+                if line_str:
+                    self.after(0, self.log, f"{prefix}{line_str}")
+        except:
+            pass
+
     def start_system(self):
         if not self.is_running:
+            self.log_box.configure(state="normal")
+            self.log_box.delete("1.0", "end")
+            self.log_box.configure(state="disabled")
+            self.log("[System] Initializing SQLite Database...")
+            
             base = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
             
             if getattr(sys, 'frozen', False):
                 exe = sys.executable
                 subprocess.run([exe, "db"], cwd=base, creationflags=CREATE_NO_WINDOW)
-                self.processes.append(subprocess.Popen([exe, "multi_main"], cwd=base, creationflags=CREATE_NO_WINDOW))
-                self.processes.append(subprocess.Popen([exe, "vlm_worker"], cwd=base, creationflags=CREATE_NO_WINDOW))
-                self.processes.append(subprocess.Popen([exe, "mailer"], cwd=base, creationflags=CREATE_NO_WINDOW))
+                self.log("[System] SQLite Database Initialized.")
+                self.log("[System] Loading YOLO GPU Engine & Camera Grabbers...")
+                
+                p_multi = subprocess.Popen([exe, "multi_main"], cwd=base, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, creationflags=CREATE_NO_WINDOW)
+                p_vlm = subprocess.Popen([exe, "vlm_worker"], cwd=base, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, creationflags=CREATE_NO_WINDOW)
+                p_mail = subprocess.Popen([exe, "mailer"], cwd=base, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, creationflags=CREATE_NO_WINDOW)
             else:
                 python_exe = "python"
                 candidates = [
@@ -83,9 +118,19 @@ class SleepMonitorApp(ctk.CTk):
                         python_exe = os.path.abspath(cand)
                         break
                 subprocess.run([python_exe, os.path.join(base, "db.py")], cwd=base, creationflags=CREATE_NO_WINDOW)
-                self.processes.append(subprocess.Popen([python_exe, os.path.join(base, "multi_main.py")], cwd=base, creationflags=CREATE_NO_WINDOW))
-                self.processes.append(subprocess.Popen([python_exe, os.path.join(base, "vlm_worker.py")], cwd=base, creationflags=CREATE_NO_WINDOW))
-                self.processes.append(subprocess.Popen([python_exe, os.path.join(base, "mailer.py")], cwd=base, creationflags=CREATE_NO_WINDOW))
+                self.log("[System] SQLite Database Initialized.")
+                self.log("[System] Loading YOLO GPU Engine & Camera Grabbers...")
+                
+                p_multi = subprocess.Popen([python_exe, os.path.join(base, "multi_main.py")], cwd=base, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, creationflags=CREATE_NO_WINDOW)
+                p_vlm = subprocess.Popen([python_exe, os.path.join(base, "vlm_worker.py")], cwd=base, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, creationflags=CREATE_NO_WINDOW)
+                p_mail = subprocess.Popen([python_exe, os.path.join(base, "mailer.py")], cwd=base, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, creationflags=CREATE_NO_WINDOW)
+            
+            self.processes = [p_multi, p_vlm, p_mail]
+            
+            # Launch background thread monitors to display high-level startup logs
+            threading.Thread(target=self.monitor_stream, args=(p_multi, ""), daemon=True).start()
+            threading.Thread(target=self.monitor_stream, args=(p_vlm, "[VLM] "), daemon=True).start()
+            threading.Thread(target=self.monitor_stream, args=(p_mail, "[Mail] "), daemon=True).start()
             
             self.is_running = True
             self.label.configure(text="System ACTIVE\n(Tracking RTSP Feeds & VLM)", text_color="green")
@@ -101,6 +146,7 @@ class SleepMonitorApp(ctk.CTk):
                     pass
             self.processes = []
             self.is_running = False
+            self.log("[System] System Stopped. All Workers Offline.")
             self.label.configure(text="System Offline", text_color="red")
             self.start_btn.configure(state="normal")
             self.stop_btn.configure(state="disabled")

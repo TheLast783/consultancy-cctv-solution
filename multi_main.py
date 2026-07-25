@@ -38,24 +38,39 @@ if not urls:
     urls = [0]
 
 # 2. Load Independent TensorRT Engines with Auto-Compilation for Target GPU
-model_path = 'yolov8m.engine' if os.path.exists('yolov8m.engine') else 'yolov8m.pt'
-try:
-    print(f"Loading {len(urls)} independent {model_path} instances into GPU RAM...")
-    models = {url: YOLO(model_path, task='detect') for url in urls}
-except Exception as e:
-    print(f"Notice: Pre-built TensorRT engine incompatible with local GPU architecture. Building fresh .engine for this GPU...")
+def get_engine_model():
+    dummy = np.zeros((640, 640, 3), dtype=np.uint8)
     if os.path.exists('yolov8m.engine'):
         try:
-            os.remove('yolov8m.engine')
-        except:
-            pass
+            print("Verifying TensorRT yolov8m.engine compatibility with local GPU...")
+            m = YOLO('yolov8m.engine', task='detect')
+            m.predict(source=dummy, verbose=False)
+            print("TensorRT engine verified 100% compatible with local GPU!")
+            return 'yolov8m.engine'
+        except Exception as e:
+            print(f"Notice: Pre-built TensorRT engine incompatible with local GPU architecture ({e}). Rebuilding engine...")
+            try:
+                os.remove('yolov8m.engine')
+            except:
+                pass
+
     if os.path.exists('yolov8m.pt'):
-        print("Compiling yolov8m.engine tailored specifically for this computer's NVIDIA GPU (Takes ~1-2 mins)...")
-        YOLO('yolov8m.pt').export(format='engine')
-        model_path = 'yolov8m.engine' if os.path.exists('yolov8m.engine') else 'yolov8m.pt'
-    else:
-        model_path = 'yolov8m.pt'
-    models = {url: YOLO(model_path, task='detect') for url in urls}
+        try:
+            print("Compiling yolov8m.engine tailored specifically for this computer's NVIDIA GPU (Takes ~1-2 mins)...")
+            m_pt = YOLO('yolov8m.pt')
+            m_pt.export(format='engine')
+            if os.path.exists('yolov8m.engine'):
+                return 'yolov8m.engine'
+        except Exception as e:
+            print(f"Engine compilation notice ({e}). Running on PyTorch yolov8m.pt...")
+            return 'yolov8m.pt'
+            
+    return 'yolov8m.pt'
+
+import numpy as np
+model_path = get_engine_model()
+print(f"Loading {len(urls)} independent {model_path} instances into GPU RAM...")
+models = {url: YOLO(model_path, task='detect') for url in urls}
 
 # 3. Threaded Camera Grabbers
 class LiveCamera:
@@ -105,8 +120,10 @@ dummy_frame = np.zeros((640, 640, 3), dtype=np.uint8)
 for i, url in enumerate(urls, 1):
     safe_name = "".join(c if c.isalnum() else "_" for c in str(url)[-20:])
     print(f"[{i}/{len(urls)}] Booting AI Core for Camera: {safe_name}...")
-    # Force TensorRT to allocate execution context immediately
-    models[url].predict(source=dummy_frame, verbose=False)
+    try:
+        models[url].predict(source=dummy_frame, verbose=False)
+    except Exception as e:
+        print(f"Notice during camera {safe_name} allocation: {e}")
 
 print("\nAll AI Cores Online! Starting Live Multi-Engine Inference...\n")
 
