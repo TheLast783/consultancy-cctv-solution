@@ -67,19 +67,27 @@ def get_engine_model():
         except Exception as e:
             print(f"Notice: Pre-built TensorRT engine incompatible with local GPU architecture ({e}). Rebuilding engine...")
             try:
-                os.remove('yolov8m.engine')
+                if os.path.exists('yolov8m.engine'):
+                    os.remove('yolov8m.engine')
             except:
                 pass
 
     if os.path.exists('yolov8m.pt'):
         try:
             print("Compiling yolov8m.engine tailored specifically for this computer's NVIDIA GPU (Takes ~1-2 mins)...")
-            m_pt = YOLO('yolov8m.pt')
+            m_pt = YOLO('yolov8m.pt', task='detect')
             m_pt.export(format='engine')
             if os.path.exists('yolov8m.engine'):
+                m_check = YOLO('yolov8m.engine', task='detect')
+                m_check.predict(source=dummy, verbose=False)
                 return 'yolov8m.engine'
         except Exception as e:
-            print(f"Engine compilation notice ({e}). Running on PyTorch yolov8m.pt...")
+            print(f"Engine compilation notice ({e}). Cleaning up and running on PyTorch yolov8m.pt...")
+            try:
+                if os.path.exists('yolov8m.engine'):
+                    os.remove('yolov8m.engine')
+            except:
+                pass
             return 'yolov8m.pt'
             
     return 'yolov8m.pt'
