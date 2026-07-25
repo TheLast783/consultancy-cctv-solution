@@ -66,6 +66,7 @@ class SleepMonitorApp(ctk.CTk):
         if has_update:
             msg = f"A new version (v{latest_ver}) is available on GitHub!\nWould you like to update now?"
             if messagebox.askyesno("Update Available", msg):
+                self.stop_system()
                 self.update_btn.configure(text="Updating App...")
                 self.update()
                 apply_update(download_url)

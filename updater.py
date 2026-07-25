@@ -57,25 +57,27 @@ def apply_update(download_url):
                         f.write(
                             "@echo off\n"
                             "cd /d \"%~dp0\"\n"
+                            "taskkill /f /im CCTVSleepMonitor.exe > NUL 2>&1\n"
                             "timeout /t 2 /nobreak > NUL\n"
                             "tar -xf update.zip\n"
                             "if exist CCTVSleepMonitor\\ (\n"
-                            "    xcopy /s /y /e CCTVSleepMonitor\\*.py .\n"
+                            "    xcopy /s /y /e /q CCTVSleepMonitor\\* . > NUL 2>&1\n"
                             "    rmdir /s /q CCTVSleepMonitor\n"
                             ")\n"
-                            "del update.zip\n"
+                            "del /f /q update.zip > NUL 2>&1\n"
                             "start CCTVSleepMonitor.exe\n"
-                            "del update_helper.bat\n"
+                            "del /f /q update_helper.bat\n"
                         )
                     else:
                         f.write(
                             "@echo off\n"
                             "cd /d \"%~dp0\"\n"
+                            "taskkill /f /im CCTVSleepMonitor.exe > NUL 2>&1\n"
                             "timeout /t 2 /nobreak > NUL\n"
-                            "copy /y CCTVSleepMonitor_new.exe CCTVSleepMonitor.exe\n"
-                            "del CCTVSleepMonitor_new.exe\n"
+                            "copy /y CCTVSleepMonitor_new.exe CCTVSleepMonitor.exe > NUL 2>&1\n"
+                            "del /f /q CCTVSleepMonitor_new.exe > NUL 2>&1\n"
                             "start CCTVSleepMonitor.exe\n"
-                            "del update_helper.bat\n"
+                            "del /f /q update_helper.bat\n"
                         )
                 subprocess.Popen(["cmd.exe", "/c", bat_script], creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
                 sys.exit(0)
