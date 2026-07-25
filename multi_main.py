@@ -54,48 +54,10 @@ if not urls:
     print("WARNING: No valid rtsp:// lines found in .env. Falling back to webcam 0.")
     urls = [0]
 
-# 2. Load Independent TensorRT Engines with Auto-Compilation for Target GPU
-def get_engine_model():
-    dummy = np.zeros((640, 640, 3), dtype=np.uint8)
-    if os.path.exists('yolov8m.engine'):
-        try:
-            print("Verifying TensorRT yolov8m.engine compatibility with local GPU...")
-            m = YOLO('yolov8m.engine', task='detect')
-            m.predict(source=dummy, verbose=False)
-            print("TensorRT engine verified 100% compatible with local GPU!")
-            return 'yolov8m.engine'
-        except Exception as e:
-            print(f"Notice: Pre-built TensorRT engine incompatible with local GPU architecture ({e}). Rebuilding engine...")
-            try:
-                if os.path.exists('yolov8m.engine'):
-                    os.remove('yolov8m.engine')
-            except:
-                pass
-
-    if os.path.exists('yolov8m.pt'):
-        try:
-            print("Compiling yolov8m.engine tailored specifically for this computer's NVIDIA GPU (Takes ~1-2 mins)...")
-            m_pt = YOLO('yolov8m.pt', task='detect')
-            m_pt.export(format='engine')
-            if os.path.exists('yolov8m.engine'):
-                m_check = YOLO('yolov8m.engine', task='detect')
-                m_check.predict(source=dummy, verbose=False)
-                return 'yolov8m.engine'
-        except Exception as e:
-            print(f"Engine compilation notice ({e}). Cleaning up and running on PyTorch yolov8m.pt...")
-            try:
-                if os.path.exists('yolov8m.engine'):
-                    os.remove('yolov8m.engine')
-            except:
-                pass
-            return 'yolov8m.pt'
-            
-    return 'yolov8m.pt'
-
-import numpy as np
-model_path = get_engine_model()
-print(f"Loading {len(urls)} independent {model_path} instances into GPU RAM...")
-models = {url: YOLO(model_path, task='detect') for url in urls}
+# 2. Load PyTorch GPU yolov8m.pt AI Models directly
+model_path = 'yolov8m.pt'
+print(f"Loading {len(urls)} independent {model_path} instances into GPU RAM...", flush=True)
+models = {url: YOLO('yolov8m.pt', task='detect') for url in urls}
 
 # 3. Threaded Camera Grabbers
 class LiveCamera:
