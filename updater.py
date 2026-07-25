@@ -40,23 +40,37 @@ def apply_update(download_url):
         if download_url and (download_url.endswith(".exe") or download_url.endswith(".zip")):
             try:
                 exe_dir = os.path.dirname(sys.executable)
-                new_exe = os.path.join(exe_dir, "CCTVSleepMonitor_new.exe")
+                is_zip = download_url.endswith(".zip")
+                target_filename = "update.zip" if is_zip else "CCTVSleepMonitor_new.exe"
+                save_path = os.path.join(exe_dir, target_filename)
+                
                 res = requests.get(download_url, stream=True, timeout=30)
-                with open(new_exe, "wb") as f:
+                with open(save_path, "wb") as f:
                     for chunk in res.iter_content(chunk_size=8192):
                         f.write(chunk)
                 
-                # Write update batch helper to safely swap executable upon exit
+                # Write update batch helper script
                 bat_script = os.path.join(exe_dir, "update_helper.bat")
                 with open(bat_script, "w") as f:
-                    f.write(
-                        "@echo off\n"
-                        "timeout /t 2 /nobreak > NUL\n"
-                        "copy /y CCTVSleepMonitor_new.exe CCTVSleepMonitor.exe\n"
-                        "del CCTVSleepMonitor_new.exe\n"
-                        "start CCTVSleepMonitor.exe\n"
-                        "del update_helper.bat\n"
-                    )
+                    if is_zip:
+                        # Unpack zip archive over existing folder (updates all .py scripts and exe)
+                        f.write(
+                            "@echo off\n"
+                            "timeout /t 2 /nobreak > NUL\n"
+                            "tar -xf update.zip\n"
+                            "del update.zip\n"
+                            "start CCTVSleepMonitor.exe\n"
+                            "del update_helper.bat\n"
+                        )
+                    else:
+                        f.write(
+                            "@echo off\n"
+                            "timeout /t 2 /nobreak > NUL\n"
+                            "copy /y CCTVSleepMonitor_new.exe CCTVSleepMonitor.exe\n"
+                            "del CCTVSleepMonitor_new.exe\n"
+                            "start CCTVSleepMonitor.exe\n"
+                            "del update_helper.bat\n"
+                        )
                 subprocess.Popen(["cmd.exe", "/c", bat_script], creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
                 sys.exit(0)
             except Exception as e:
