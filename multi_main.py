@@ -186,7 +186,8 @@ while True:
         current_ids_this_frame = set()
         
         # Spatial position memory (12-hour / 43200s shift duration): Once detected at a location, never re-capture the same spot
-        spatial_cooldowns[camera_id] = [p for p in spatial_cooldowns.get(camera_id, []) if now - p['time'] < 43200.0]
+        cam_key = cam.src
+        spatial_cooldowns[cam_key] = [p for p in spatial_cooldowns.get(cam_key, []) if now - p['time'] < 43200.0]
         
         if result.boxes is not None and len(result.boxes) > 0:
             boxes = result.boxes.xyxy.cpu().numpy().astype(int)
@@ -289,18 +290,19 @@ while True:
                     if seconds_still >= 50.0 and not state.get('alerted', False):
                         state['alerted'] = True
                         
-                        # Spatial Position Cooldown: Check if this (X, Y) spot on this camera was triggered in the last 5 minutes
+                        # Spatial Position Cooldown (Box Coordinates cx, cy): Check if this (X, Y) box spot on this camera was triggered in last 12 hours
+                        cam_key = cam.src
                         in_spatial_cooldown = False
-                        for past in spatial_cooldowns.get(camera_id, []):
-                            if math.dist((cx, cy), (past['cx'], past['cy'])) < 120.0:
+                        for past in spatial_cooldowns.get(cam_key, []):
+                            if math.dist((cx, cy), (past['cx'], past['cy'])) < 150.0:
                                 in_spatial_cooldown = True
                                 break
                                 
                         if in_spatial_cooldown:
                             continue
                             
-                        # Record new trigger position with timestamp
-                        spatial_cooldowns.setdefault(camera_id, []).append({'cx': cx, 'cy': cy, 'time': now})
+                        # Record new trigger box coordinates (cx, cy) with timestamp
+                        spatial_cooldowns.setdefault(cam_key, []).append({'cx': cx, 'cy': cy, 'time': now})
                         
                         safe_cam_name = "".join(c if c.isalnum() else "_" for c in camera_id[-20:])
                         pending_dir = os.path.abspath('pending_review')
