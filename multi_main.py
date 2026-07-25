@@ -185,8 +185,8 @@ while True:
         track_state = global_state[camera_id]
         current_ids_this_frame = set()
         
-        # Clean up spatial cooldowns older than 300s (5 minutes) for this camera
-        spatial_cooldowns[camera_id] = [p for p in spatial_cooldowns.get(camera_id, []) if now - p['time'] < 300.0]
+        # Spatial position memory (12-hour / 43200s shift duration): Once detected at a location, never re-capture the same spot
+        spatial_cooldowns[camera_id] = [p for p in spatial_cooldowns.get(camera_id, []) if now - p['time'] < 43200.0]
         
         if result.boxes is not None and len(result.boxes) > 0:
             boxes = result.boxes.xyxy.cpu().numpy().astype(int)
