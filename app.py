@@ -33,25 +33,25 @@ class SleepMonitorApp(ctk.CTk):
         self.ver_lbl.pack(side="right")
         
         # Main Status Label
-        self.label = ctk.CTkLabel(self, text="System Offline", font=("Roboto", 22, "bold"), text_color="red")
+        self.label = ctk.CTkLabel(self, text="Auto-Starting System...", font=("Roboto", 22, "bold"), text_color="orange")
         self.label.pack(pady=15)
         
-        # Buttons
-        self.start_btn = ctk.CTkButton(self, text="START MONITORING", font=("Roboto", 18), height=45, command=self.start_system)
-        self.start_btn.pack(pady=5, padx=40, fill="x")
-        
-        self.stop_btn = ctk.CTkButton(self, text="STOP", font=("Roboto", 18), height=45, fg_color="red", hover_color="darkred", state="disabled", command=self.stop_system)
+        # Action Control Buttons
+        self.stop_btn = ctk.CTkButton(self, text="STOP MONITORING", font=("Roboto", 16), height=45, fg_color="red", hover_color="darkred", command=self.stop_system)
         self.stop_btn.pack(pady=5, padx=40, fill="x")
         
-        # Live Startup & System Status Log Area
-        self.log_box = ctk.CTkTextbox(self, height=160, font=("Consolas", 11), wrap="word")
+        # Live System Status Log Monitor
+        self.log_box = ctk.CTkTextbox(self, height=180, font=("Consolas", 11), wrap="word")
         self.log_box.pack(pady=15, padx=20, fill="both", expand=True)
-        self.log_box.insert("end", "System Status Log Ready. Click START MONITORING to begin...\n")
+        self.log_box.insert("end", "System Initializing & Auto-Starting Live Monitoring...\n")
         self.log_box.configure(state="disabled")
         
         # Update Button
         self.update_btn = ctk.CTkButton(self, text="Check for GitHub Updates", font=("Roboto", 12), fg_color="gray30", hover_color="gray40", command=self.run_update_check)
         self.update_btn.pack(pady=10)
+        
+        # Automatically Start Monitoring 0.5s after window launches
+        self.after(500, self.start_system)
 
     def log(self, text):
         self.log_box.configure(state="normal")
@@ -134,7 +134,6 @@ class SleepMonitorApp(ctk.CTk):
             
             self.is_running = True
             self.label.configure(text="System ACTIVE\n(Tracking RTSP Feeds & VLM)", text_color="green")
-            self.start_btn.configure(state="disabled")
             self.stop_btn.configure(state="normal")
 
     def stop_system(self):
@@ -148,7 +147,6 @@ class SleepMonitorApp(ctk.CTk):
             self.is_running = False
             self.log("[System] System Stopped. All Workers Offline.")
             self.label.configure(text="System Offline", text_color="red")
-            self.start_btn.configure(state="normal")
             self.stop_btn.configure(state="disabled")
 
 if __name__ == "__main__":
