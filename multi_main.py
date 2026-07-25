@@ -7,6 +7,11 @@ import re
 import numpy as np
 import threading
 from dotenv import load_dotenv
+import sys, types
+d = types.ModuleType('matplotlib')
+d.pyplot = d
+sys.modules['matplotlib'] = sys.modules['matplotlib.pyplot'] = d
+
 from ultralytics import YOLO
 import ultralytics.models.yolo.detect as yolo_detect
 import ultralytics.models.yolo.detect.predict as yolo_predict
