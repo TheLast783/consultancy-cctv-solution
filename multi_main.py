@@ -8,6 +8,8 @@ import numpy as np
 import threading
 from dotenv import load_dotenv
 from ultralytics import YOLO
+import ultralytics.models.yolo.detect as yolo_detect
+import ultralytics.models.yolo.detect.predict as yolo_predict
 import sqlite3
 
 # Force OpenCV/FFmpeg to use TCP instead of UDP for RTSP streams.
